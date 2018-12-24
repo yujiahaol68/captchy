@@ -20,11 +20,11 @@ Only std lib so it is clean
 
 Generate from very simple to very complex captcha especially for machine, but still friendly to human
 
-![simple-captcha-png](https://github.com/yujiahaol68/captchy/example/simple-out.png)
+![simple-captcha-png](https://github.com/yujiahaol68/captchy/blob/master/example/simple-out.png?raw=true)
 
-![complex-captcha-jpg](https://github.com/yujiahaol68/captchy/example/j-out.jpeg)
+![complex-captcha-jpg](https://github.com/yujiahaol68/captchy/blob/master/example/j-out.jpeg?raw=true)
 
-![complex-captcha-png](https://github.com/yujiahaol68/captchy/example/p-out.png)
+![complex-captcha-png](https://github.com/yujiahaol68/captchy/blob/master/example/p-out.png?raw=true)
 
 ## Usage
 

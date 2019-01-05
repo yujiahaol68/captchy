@@ -1,6 +1,8 @@
 # Package captchy
 
 ![build](https://img.shields.io/travis/yujiahaol68/captchy/master.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yujiahaol68/captchy)](https://goreportcard.com/report/github.com/yujiahaol68/captchy)
+[![GoDoc](https://godoc.org/github.com/yujiahaol68/captchy?status.svg)](https://godoc.org/github.com/yujiahaol68/captchy)
 
 ```go
 import "github.com/yujiahaol68/captchy"

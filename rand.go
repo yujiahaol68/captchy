@@ -13,7 +13,6 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
-// RandStringBytes is goroutine safe string generator
 func randStringBytes(n int) []byte {
 	var source = rand.NewSource(time.Now().UnixNano())
 	b := make([]byte, n)
@@ -33,6 +32,7 @@ func randStringBytes(n int) []byte {
 	return b
 }
 
+// RandomString is a goroutine safe string generator
 func RandomString() []byte {
 	return randStringBytes(capLen)
 }

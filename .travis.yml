@@ -1,0 +1,23 @@
+language: go
+os:
+  - linux
+
+dist: trusty
+sudo: false
+
+matrix:
+  include:
+  - go: "1.10.x"
+    script:
+        - go get -t -v ./...
+        - go build
+        - go test
+  - go: "1.11.x"
+    script:
+        - go build
+        - go test
+
+env:
+  - GO111MODULE=on
+
+install: true

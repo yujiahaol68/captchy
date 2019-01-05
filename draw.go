@@ -19,7 +19,7 @@ type drawer struct {
 
 func newDrawer() *drawer {
 	d := new(drawer)
-	rgba := image.NewRGBA(image.Rect(0, 0, imgW, imgH))
+	rgba := canvasPool.Get().(*image.RGBA)
 	draw.Draw(rgba, rgba.Bounds(), bgSrc, image.ZP, draw.Src)
 	d.captchaImg = rgba
 	d.PrepareDrawer()
@@ -45,8 +45,9 @@ func (d *drawer) DrawText(t []byte) {
 	d.fontDrawer.Dot = fixed.P(dx, y)
 	gd := (d.fontDrawer.MeasureBytes(t) / fixed.I(len(t))).Floor()
 
+	unf := image.NewUniform(fontColors[0])
 	if len(fontColors) == 1 {
-		d.fontDrawer.Src = image.NewUniform(fontColors[0])
+		d.fontDrawer.Src = unf
 		for i := 0; i < len(t); i++ {
 			d.fontDrawer.Dot.Y = fixed.I(y) + fixed.I(devateRandI(baselineDeviation))
 			d.fontDrawer.DrawBytes(t[i : i+1])
@@ -59,7 +60,8 @@ func (d *drawer) DrawText(t []byte) {
 		}
 
 		for i := 0; i < len(t); i++ {
-			d.fontDrawer.Src = image.NewUniform(fontColors[fmask[i]])
+			unf.C = fontColors[fmask[i]]
+			d.fontDrawer.Src = unf
 			d.fontDrawer.Dot.Y = fixed.I(y) + fixed.I(devateRandI(baselineDeviation))
 			d.fontDrawer.DrawBytes(t[i : i+1])
 			d.fontDrawer.Dot.X += fixed.I(gd)
@@ -115,7 +117,7 @@ func (d *drawer) DrawNoiseLines() {
 }
 
 func (d *drawer) ApplyDistort(amplude, period float64) {
-	nrgba := image.NewRGBA(image.Rect(0, 0, imgW, imgH))
+	nrgba := canvasPool.Get().(*image.RGBA)
 	draw.Draw(nrgba, nrgba.Bounds(), bgSrc, image.ZP, draw.Src)
 
 	trans := color.RGBA{}
@@ -137,6 +139,7 @@ func (d *drawer) ApplyDistort(amplude, period float64) {
 		}
 	}
 
+	canvasPool.Put(d.captchaImg)
 	d.captchaImg = nrgba
 }
 
@@ -226,7 +229,7 @@ func rotate(img *image.RGBA, angle float64) {
 				yt := y - hheight
 
 				sinma := math.Sin(-angle)
-				cosma := math.Cos(-angle)
+				cosma := math.Sqrt(1 - sinma*sinma)
 
 				xs := int(math.Round((cosma*float64(xt)-sinma*float64(yt))+float64(hwidth))) + dx
 				ys := int(math.Round((sinma*float64(xt)+cosma*float64(yt))+float64(hheight))) + dy
@@ -245,6 +248,8 @@ func rotate(img *image.RGBA, angle float64) {
 		r := sr.Sub(sr.Min).Add(image.Point{dx, dy})
 		draw.Draw(img, r, nrgba, image.ZP, draw.Src)
 	}
+
+	canvasPool.Put(nrgba)
 }
 
 // drawLine from min point to max point

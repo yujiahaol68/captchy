@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"golang.org/x/image/font/gofont/goitalic"
 	"golang.org/x/image/font/gofont/gomedium"
@@ -25,6 +26,8 @@ var (
 	rulerDeviation            = 20
 	baselineDeviation         = 8
 	rotateDeviation   float64 = 5
+	rotateMatX        int
+	rotateMatY        int
 	sizeDeviation     float64 = 5
 	amplude           float64 = 7
 	period            float64 = 150
@@ -46,6 +49,8 @@ var (
 	CircleColor = ColorInHex("#728C7F")
 	noiseColors []color.Color
 	bgSrc       *image.Uniform
+
+	canvasPool *sync.Pool
 )
 
 const (
@@ -59,6 +64,7 @@ const (
 	ItalicFont
 )
 
+// Config stores config of captcha image
 type Config struct {
 	ImgW        int
 	ImgH        int
@@ -68,8 +74,11 @@ type Config struct {
 	FontColors  []color.Color
 	BgColor     color.Color
 	NoiseColors []color.Color
+	RotateMatX  int
+	RotateMatY  int
 }
 
+// ColorInHex is a warpper helper to get color by Hex. Support Hex color format like "0xF8AA5D" or "#728C7F"
 func ColorInHex(hex string) color.Color {
 	hex = strings.TrimPrefix(hex, "0x")
 	hex = strings.TrimPrefix(hex, "#")
@@ -89,6 +98,7 @@ func ColorInHex(hex string) color.Color {
 	return color.RGBA{uint8(r), uint8(g), uint8(b), 0xFF}
 }
 
+// Default return a basic captchy config
 func Default() *Config {
 	cfg := Config{
 		240,
@@ -103,12 +113,22 @@ func Default() *Config {
 			ColorInHex("0x121DF1"),
 			ColorInHex("0xF1AA12"),
 		},
+		4,
+		2,
 	}
 
 	return &cfg
 }
 
+// New load config and initialize all resource
 func New(cfg *Config) {
+	if rotateDeviation > 0 {
+		SetRotateDivideMat(cfg.RotateMatX, cfg.RotateMatY)
+	}
+	if len(cfg.FontColors) == 0 {
+		log.Fatalln("text must has at least one color")
+	}
+
 	switch cfg.fontPath {
 	case RegularFont:
 		tFont, _ = truetype.Parse(goregular.TTF)
@@ -138,6 +158,12 @@ func New(cfg *Config) {
 	bgSrc = image.NewUniform(cfg.BgColor)
 	noiseColors = cfg.NoiseColors
 	fontColors = cfg.FontColors
+
+	canvasPool = &sync.Pool{
+		New: func() interface{} {
+			return image.NewRGBA(image.Rect(0, 0, imgW, imgH))
+		},
+	}
 }
 
 func (c *Config) SetFont(path string) {
@@ -158,6 +184,7 @@ func SetNoiseThreshold(p float64) {
 	}
 }
 
+// SetBg can set background color
 func SetBg(c color.Color) {
 	bgSrc = image.NewUniform(c)
 }
@@ -176,6 +203,7 @@ func SetFontDeviation(d int) {
 	baselineDeviation = d
 }
 
+// SetRotateDegree restricts sub image rotate in range [-d, d], d should not greater than 8
 func SetRotateDegree(d float64) {
 	if d >= 0 && d < 8 {
 		rotateDeviation = d
@@ -184,14 +212,38 @@ func SetRotateDegree(d float64) {
 	log.Fatalln("Rotate degree should be in range [0, 8)")
 }
 
+func DisableRotate() {
+	rotateDeviation = 0
+}
+
+// SetRotateDivideMat set the image divide matrix [y, x], default div matrix x=0, y=0 is [2, 4]
+func SetRotateDivideMat(dx, dy int) {
+	if dx == 0 || dy == 0 {
+		rotateMatX = 4
+		rotateMatY = 2
+		return
+	}
+	if dx < 0 || dy < 0 {
+		log.Fatalln("dx and dy should be positive")
+	}
+	if imgW%dx != 0 || imgH%dy != 0 {
+		log.Fatalln("dx, dy should be divisible by imgW, imgH when cutting sub image for rotation")
+	}
+	rotateMatX = dx
+	rotateMatY = dy
+}
+
+// DisableRuler will make drawer not to draw ruler
 func DisableRuler() {
 	RulerColor = color.Transparent
 }
 
+// DisableCircle can disable drawing circle
 func DisableCircle() {
 	circleCount = 0
 }
 
+// GenerateImg gen image data according to random string
 func GenerateImg(t []byte) Encoder {
 	d := newDrawer()
 	if saltPercent > 0 && len(noiseColors) == 0 {

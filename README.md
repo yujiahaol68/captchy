@@ -1,5 +1,7 @@
 # Package captchy
 
+![build](https://img.shields.io/travis/yujiahaol68/captchy/master.svg)
+
 ```go
 import "github.com/yujiahaol68/captchy"
 ```

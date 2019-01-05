@@ -51,6 +51,8 @@ func Test_GenSimple(t *testing.T) {
 		[]color.Color{color.Black},
 		color.White,
 		[]color.Color{},
+		0,
+		0,
 	}
 	cfg.SetFont("./testdata/luxisr.ttf")
 	New(cfg)
@@ -97,6 +99,8 @@ func BenchmarkImgGenLen4Normal(b *testing.B) {
 			ColorInHex("0x121DF1"),
 			ColorInHex("0xF1AA12"),
 		},
+		4,
+		2,
 	})
 	rbs := RandomString()
 
